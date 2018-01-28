@@ -22,28 +22,32 @@ void execute_command (char **command)
 	int status;
 	bool quit = false;
 
+	if (strcmp(*command, "quit") == 0)
+		quit = true;
+
 	if ((pid = fork()) < 0) {
 		// Handle forking error
 		printf("forking failed");
 		exit(1);
+
 	} else if (pid == 0) {
 		// Check for quit command
-		if (strcmp(*command, "ls") == 0)
-			sleep(2);
-
-		if (strcmp(*command, "quit") == 0) {
-			quit = true;
-		} else if (execvp(*command, command) < 0 ) { // Execution withing child process
+		if (execvp(*command, command) < 0 ) { // Execution withing child process
 			// The if statements runs the command itself
 			// so if it returns at all, there's an error
 			printf("there was an error with the exec command\n");
 			exit(1);
 		}
 	} else {
-		while(wait(&status) != pid)
+		while((pid = waitpid(-1, &status, 0)) != -1) {
+			printf("Process terminated with id: %i\n\n", pid);
+
+			if (quit == true)
+				exit(0);
+		}
+		// while(wait(&status) != pid)
 			// Wait for child exec process to do its thing
-			;
-		printf("Child process finished with id: %d\n\n\n", pid);
+			//;
 	}
 }
 
@@ -57,12 +61,11 @@ int main(void)
 	printf("prompt ~> ");
 	while (fgets(line, sizeof(line), stdin)) {
 		parse_line(line, commands);
-		
 		// Iterate over every command
 		for (i = 0; commands[i] != 0; i++) {
 			char *parsable = commands[i];
 			char *command_token = strtok(parsable, " \t\n");
-			
+
 			while(command_token) {
 				single[j] = command_token;
 				command_token = strtok(NULL, " \t\n");
