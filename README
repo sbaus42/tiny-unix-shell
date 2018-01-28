@@ -1,1 +1,30 @@
 # tiny-unix-shell
+
+## FSUID: sb05j
+
+## Code Structure
+
+The code follows a very basic structure in which the main loop contains two
+ways of handling date. The handling depends on whether the code has arguments
+or not.
+If it does, the execution flow goes into checking the amount of arguments and
+then runs with very much the same code that would be ran without. The main
+difference between these two flows is how the lines are read (one is a file
+and the other is from stdin).
+
+## Spec Handling
+
+For situations such as no input or blank lines, I used the suggested method of
+tokenizing the strings. I did two passes at tokenizing. In the first one I moved
+every command into its own variable within the commands array. The second pass
+removed the blank spaces, tabs and new lines.
+
+## Known Bugs
+
+As of this writing, I believe my code is not entirely concurrent since my tests
+for concurrency did not yield good results. When I entered the 'ls' command, I
+had the routine check for that particular command and add a 10 sec sleep within
+the foked process. It was evident that the whole program slept so it leads me to
+believe that concurrency was not achieved.
+For this reason quit does not work as intended as well. I was not able to grasp
+the concept of using 'waitpid()' and it shows in that way.
