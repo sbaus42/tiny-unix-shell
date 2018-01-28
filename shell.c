@@ -5,25 +5,15 @@
 #include <sys/wait.h>	// for wait
 #include <stdbool.h>	// to use boolean data types
 
-void parse_line (char *line, char **commands)
-{
-	char *token = strtok(line, ";");
-	// start a loop to go ver the line separated by ';'
-	while (token) {
-		// add logic for empty tokens and quit command
-		*commands++ = token;
-		token = strtok(NULL, ";");
-	}
-}
+bool QUIT = false;
 
 void execute_command (char **command)
 {
 	int pid;		// pid for the child process
 	int status;
-	bool quit = false;
 
 	if (strcmp(*command, "quit") == 0)
-		quit = true;
+		QUIT = true;
 
 	if ((pid = fork()) < 0) {
 		// Handle forking error
@@ -35,54 +25,116 @@ void execute_command (char **command)
 		if (execvp(*command, command) < 0 ) { // Execution withing child process
 			// The if statements runs the command itself
 			// so if it returns at all, there's an error
-			printf("there was an error with the exec command\n");
-			exit(1);
+			if (QUIT == true) {
+				printf("Quitting program\n");
+			} else {
+				printf("there was an error with the exec command\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 	} else {
 		while((pid = waitpid(-1, &status, 0)) != -1) {
-			printf("Process terminated with id: %i\n\n", pid);
-
-			if (quit == true)
-				exit(0);
+			printf("PID %i exited with status 0\n\n", pid);
 		}
-		// while(wait(&status) != pid)
-			// Wait for child exec process to do its thing
-			//;
+	}
+
+	if (QUIT == true)
+		exit(EXIT_SUCCESS);
+}
+
+void parse_line (char *line, char **commands)
+{
+	int i,j;
+	char *single[64];
+	char *token = strtok(line, ";");
+	// start a loop to go ver the line separated by ';'
+	while (token) {
+		// add logic for empty tokens and quit command
+		*commands++ = token;
+		token = strtok(NULL, ";");
 	}
 }
 
-int main(void)
+void parse_commands (char **commands)
 {
-	char line[1024];
+	char *single[64];
+	int i, j = 0;
+
+	for (i = 0; commands[i] != 0; i++) {
+		char *parsable = commands[i];
+		char *command_token = strtok(parsable, " \t\n");
+
+		while(command_token) {
+			single[j] = command_token;
+			command_token = strtok(NULL, " \t\n");
+			j++;
+		}
+
+		single[j] = (char *)'\0';
+
+		if (*single != 0)
+			execute_command(single);
+		// Clear the string array for next iteration
+		j = 0;
+	}
+	// clean the commands and single array
+	memset(&commands, 0, sizeof(commands));
+	memset(&single, 0, sizeof(single));
+}
+
+int main(int argc, char *argv[])
+{
+	char line[512];
 	char *commands[64];
 	char *single[64];
 	int i, j = 0;
 
-	printf("prompt ~> ");
-	while (fgets(line, sizeof(line), stdin)) {
-		parse_line(line, commands);
-		// Iterate over every command
-		for (i = 0; commands[i] != 0; i++) {
-			char *parsable = commands[i];
-			char *command_token = strtok(parsable, " \t\n");
-
-			while(command_token) {
-				single[j] = command_token;
-				command_token = strtok(NULL, " \t\n");
-				j++;
-			}
-
-			single[j] = (char *)'\0';		
-			if (*single != 0)
-				execute_command(single);
-			// Clear the string array for next iteration
-			j = 0;
-		}
-		// clean the commands and single array
-		memset(&commands, 0, sizeof(commands));
-		memset(&single, 0, sizeof(single));
-		// execute_commands(command);
-		printf("prompt ~> ");
+	if (argc > 2) {
+		fprintf(stderr, "Too many arguments!!!\n");
+		exit(EXIT_FAILURE);
 	}
+
+
+	if (argc > 1) {
+		FILE *file;
+		// Check for the file
+		// Open it
+		file = fopen(argv[1], "r");
+		// Parse it (parsing includes creating the commands array)
+		if (file) {
+			while (fgets(line, sizeof(line), file)) {
+				if (sizeof(line) > 512) {
+					fprintf(stderr, "Line too long!!!\n");
+					exit(EXIT_FAILURE);
+				} else {
+					printf(line);
+					parse_line(line, commands);
+					parse_commands(commands);
+				}
+			}
+		} else {
+			fprintf(stderr, "Cannot open file or does not exist!!!\n");
+			exit(EXIT_FAILURE);
+		}
+		printf("im hereeeee");
+
+		// Close the file
+		fclose(file);
+	} else {
+		printf("prompt ~> ");
+		while (fgets(line, sizeof(line), stdin)) {
+			if (sizeof(line) > 512) {
+				fprintf(stderr, "Line too long!!!\n");
+				exit(EXIT_FAILURE);
+			} else {
+				parse_line(line, commands);
+				parse_commands(commands);
+			}
+			printf("prompt ~> ");
+		}
+	}
+
+
+
 	return 0;
 }
