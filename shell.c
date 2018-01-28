@@ -17,8 +17,8 @@ void execute_command (char **command)
 
 	if ((pid = fork()) < 0) {
 		// Handle forking error
-		printf("forking failed");
-		exit(1);
+		fprintf(stderr, "Forking failed!!!\n");
+		exit(EXIT_FAILURE);
 
 	} else if (pid == 0) {
 		// Check for quit command
@@ -28,7 +28,7 @@ void execute_command (char **command)
 			if (QUIT == true) {
 				printf("Quitting program\n");
 			} else {
-				printf("there was an error with the exec command\n");
+				fprintf(stderr, "Error in exec command!!!\n");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -44,8 +44,6 @@ void execute_command (char **command)
 
 void parse_line (char *line, char **commands)
 {
-	int i,j;
-	char *single[64];
 	char *token = strtok(line, ";");
 	// start a loop to go ver the line separated by ';'
 	while (token) {
@@ -86,8 +84,6 @@ int main(int argc, char *argv[])
 {
 	char line[512];
 	char *commands[64];
-	char *single[64];
-	int i, j = 0;
 
 	if (argc > 2) {
 		fprintf(stderr, "Too many arguments!!!\n");
@@ -116,10 +112,12 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Cannot open file or does not exist!!!\n");
 			exit(EXIT_FAILURE);
 		}
-		printf("im hereeeee");
 
 		// Close the file
 		fclose(file);
+		// End the program
+		printf("Terminaint Program\n");
+		exit(EXIT_SUCCESS);
 	} else {
 		printf("prompt ~> ");
 		while (fgets(line, sizeof(line), stdin)) {
@@ -133,8 +131,6 @@ int main(int argc, char *argv[])
 			printf("prompt ~> ");
 		}
 	}
-
-
 
 	return 0;
 }
