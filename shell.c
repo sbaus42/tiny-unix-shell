@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 		// Close the file
 		fclose(file);
 		// End the program
-		printf("Terminaint Program\n");
+		printf("Terminating Program\n");
 		exit(EXIT_SUCCESS);
 	} else {
 		printf("prompt ~> ");
